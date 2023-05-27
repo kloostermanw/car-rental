@@ -2,13 +2,13 @@
 
 namespace App\Entity;
 
-use App\Repository\CarRepository;
+use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: CarRepository::class)]
-class Car
+#[ORM\Entity(repositoryClass: UserRepository::class)]
+class User
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -16,13 +16,15 @@ class Car
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    private ?string $brand = null;
+    private ?string $name = null;
 
-    #[ORM\ManyToOne(inversedBy: 'cars')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Category $category = null;
+    #[ORM\Column(length: 255)]
+    private ?string $email = null;
 
-    #[ORM\OneToMany(mappedBy: 'car', targetEntity: Reservation::class, orphanRemoval: true)]
+    #[ORM\Column(length: 255)]
+    private ?string $password = null;
+
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Reservation::class, orphanRemoval: true)]
     private Collection $reservations;
 
     public function __construct()
@@ -35,26 +37,38 @@ class Car
         return $this->id;
     }
 
-    public function getBrand(): ?string
+    public function getName(): ?string
     {
-        return $this->brand;
+        return $this->name;
     }
 
-    public function setBrand(string $brand): self
+    public function setName(string $name): self
     {
-        $this->brand = $brand;
+        $this->name = $name;
 
         return $this;
     }
 
-    public function getCategory(): ?Category
+    public function getEmail(): ?string
     {
-        return $this->category;
+        return $this->email;
     }
 
-    public function setCategory(?Category $category): self
+    public function setEmail(string $email): self
     {
-        $this->category = $category;
+        $this->email = $email;
+
+        return $this;
+    }
+
+    public function getPassword(): ?string
+    {
+        return $this->password;
+    }
+
+    public function setPassword(string $password): self
+    {
+        $this->password = $password;
 
         return $this;
     }
@@ -71,7 +85,7 @@ class Car
     {
         if (!$this->reservations->contains($reservation)) {
             $this->reservations->add($reservation);
-            $reservation->setCar($this);
+            $reservation->setUser($this);
         }
 
         return $this;
@@ -81,8 +95,8 @@ class Car
     {
         if ($this->reservations->removeElement($reservation)) {
             // set the owning side to null (unless already changed)
-            if ($reservation->getCar() === $this) {
-                $reservation->setCar(null);
+            if ($reservation->getUser() === $this) {
+                $reservation->setUser(null);
             }
         }
 
