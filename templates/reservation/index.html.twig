@@ -4,6 +4,7 @@
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
     {{ form_start(form) }}
+    <div class="mt-2 text-sm text-red-600 dark:text-red-500">{{ form_errors(form) }}</div>
 
     <div class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Number of persons</label>
@@ -12,12 +13,14 @@
 
     <div class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Start date</label>
-        {{ form_row(form.startDate) }}
+        {{ form_widget(form.startDate) }}
+        <div class="mt-2 text-sm text-red-600 dark:text-red-500">{{ form_errors(form.startDate) }}</div>
     </div>
 
     <div class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">End date</label>
-        {{ form_row(form.endDate) }}
+        {{ form_widget(form.endDate) }}
+        <div class="mt-2 text-sm text-red-600 dark:text-red-500">{{ form_errors(form.endDate) }}</div>
     </div>
 
     <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Submit</button>

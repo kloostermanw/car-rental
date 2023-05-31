@@ -2,13 +2,15 @@
 
 namespace App\Controller;
 
-use App\Classes\BookReservation;
 use App\Entity\Car;
 use App\Entity\Reservation;
 use App\Entity\User;
 use App\Form\ReservationFormType;
+use DateInterval;
+use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -31,19 +33,35 @@ class ReservationController extends AbstractController
         $form = $this->createForm(ReservationFormType::class, $reservation);
 
         $form->handleRequest($request);
-        if ($form->isSubmitted() && $form->isValid()) {
+
+        if ($form->isSubmitted()) {
             /** @var Reservation $objReservation */
             $objReservation = $form->getData();
 
-            if ($user instanceof User) {
-                $objReservation->setUser($user);
+            if (!$this->canUserMakeReservation($user, $objReservation->getStartDate())) {
+                $form->addError(new FormError('You are limited to rente a car once every 30 days.'));
             }
 
-            $arrResult = $this->createBooking($objReservation);
+            if ($form->isValid()) {
 
-            return $this->render('reservation/show.html.twig', [
-                'result' => $arrResult
-            ]);
+                if ($user instanceof User) {
+                    $objReservation->setUser($user);
+                }
+
+                $objReservation = $this->createBooking($objReservation);
+
+
+//            return $this->redirectToRoute("events", [
+//                'bigcity'=> $form->get('bigcity')->getData()->getId(),
+//                'category'=> $form->get('category')->getData()->getId(),
+//                'events' => $events
+//            ]);
+
+                return $this->render('reservation/show.html.twig', [
+                    "reservation_id" => $objReservation->getId(),
+                    "car" => ($objReservation->getCar() instanceof Car) ? $objReservation->getCar()->getId() : "no car found for this period.",
+                ]);
+            }
         }
 
         return $this->render('reservation/index.html.twig', [
@@ -51,29 +69,70 @@ class ReservationController extends AbstractController
         ]);
     }
 
-    protected function createBooking(Reservation $reservation): array
+    protected function createBooking(Reservation $reservation): Reservation
     {
         //*** Find car ids that are NOT available for this period.
         $query = $this->em->createQuery(
             'select DISTINCT IDENTITY(r.car) from App\Entity\Reservation r
                 where r.startDate < :end
                 and r.endDate > :start'
-        )->setParameters(['start' => '2023-05-05', 'end' => '2023-05-15']);
+            )
+            ->setParameters(['start' => $reservation->getStartDate(), 'end' => $reservation->getEndDate()]);
 
         $result = $query->getScalarResult();
         $ids = array_column($result, "1");
 
+        $qb = $this->em->createQueryBuilder();
+        $qb->select('car')
+            ->from(Car::class, 'car')
+            ->leftJoin('car.category', 'cat');
+        if (count($ids) > 0) {
+            $qb->where($qb->expr()->notIn('car.id', ':ids'))
+                ->setParameter('ids', $ids);
+        }
+        $qb->andWhere('cat.numberOfPersons >= :persons')
+            ->orderBy('cat.numberOfPersons')
+            ->setParameter('persons', $reservation->getNumberOfPersons())
+            ->setMaxResults(1);
 
-        //*** Get cars that have not these ids.
-        $result = $this->em->createQuery(
-            'SELECT c FROM App\Entity\Car c
-             WHERE c.id NOT IN (:ids)'
-            )
-            ->setParameter('ids', $ids, \Doctrine\DBAL\Connection::PARAM_INT_ARRAY)
-            ->getResult();
 
-        dd($result);
+        if (count($qb->getQuery()->getResult())) {
+            $objCar = $qb->getQuery()->getSingleResult();
 
-        return [];
+            if ($objCar instanceof Car) {
+                $reservation->setCar($objCar);
+                $this->em->persist($reservation);
+                $this->em->flush();
+            }
+        }
+
+        return $reservation;
     }
+
+    protected function canUserMakeReservation(UserInterface $user, ?DateTimeInterface $objDateTime): bool
+    {
+        $blnReturn = true;
+
+        $qb = $this->em->createQueryBuilder();
+        $qb->select('reservation')
+            ->from(Reservation::class, 'reservation')
+            ->where('reservation.user = :user')
+            ->orderBy('reservation.endDate')
+            ->setParameter('user', $user)
+            ->setMaxResults(1);
+
+        if (count($qb->getQuery()->getResult())) {
+            $objReservation = $qb->getQuery()->getSingleResult();
+
+            if (
+                $objReservation instanceof Reservation &&
+                ($objReservation->getEndDate())->add(new DateInterval('P30D')) >= $objDateTime
+            ) {
+                $blnReturn = false;
+            }
+        }
+
+        return $blnReturn;
+    }
+
 }

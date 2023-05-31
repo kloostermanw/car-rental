@@ -14,24 +14,41 @@ class ReservationFormType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('numberOfPersons', IntegerType::class, [
-                'attr' => [
-                    'class' => 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500'
-                ],
-                'label' => false
-            ])
-            ->add('startDate', DateTimeType::class, [
-                'attr' => [
-                    'class' => ''
-                ],
-                'label' => false
-            ])
-            ->add('endDate', DateTimeType::class, [
-                'attr' => [
-                    'class' => ''
-                ],
-                'label' => false
-            ])
+            ->add(
+                'numberOfPersons',
+                IntegerType::class,
+                [
+                    'attr' => [
+                        'min' => 1,
+                        'max' => 7,
+                        'class' => ''
+                    ],
+                    'label' => false,
+                    'data' => 1,
+                ]
+            )
+            ->add(
+                'startDate',
+                DateTimeType::class,
+                [
+                    'attr' => [
+                        'class' => ''
+                    ],
+                    'label' => false,
+                    'data' => new \DateTime('today'),
+                ]
+            )
+            ->add(
+                'endDate',
+                DateTimeType::class,
+                [
+                    'attr' => [
+                        'class' => ''
+                    ],
+                    'label' => false,
+                    'data' => new \DateTime('tomorrow'),
+                ]
+            )
 //            ->add('user')
 //            ->add('car')
         ;
