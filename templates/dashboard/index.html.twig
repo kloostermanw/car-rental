@@ -1,9 +1,85 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
+    <section class="bg-white dark:bg-gray-900 p-6">
+        <div class="flex flex-col items-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+        {% if app.user %}
 
-    <section class="bg-white dark:bg-gray-900">
 
 
+            <div class="relative overflow-x-auto">
+
+                {% if reservations|length > 0 %}
+                    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">
+                                Product name
+                            </th>
+                            <th scope="col" class="px-6 py-3">
+                                Start Date
+                            </th>
+                            <th scope="col" class="px-6 py-3">
+                                End Date
+                            </th>
+                            <th scope="col" class="px-6 py-3">
+                                Number Of Persons
+                            </th>
+                            <th scope="col" class="px-6 py-3">
+                                Price
+                            </th>
+                            <th scope="col" class="px-6 py-3">
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody>
+
+                        {% for reservation in reservations %}
+                            <tr class="bg-white dark:bg-gray-800">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                    {{ reservation.getCar().getBrand() }} ({{ reservation.getCar().getCategory().getNumberOfPersons }})
+                                </th>
+                                <td class="px-6 py-4">
+                                    {{ reservation.getStartDate().format('Y-m-d') }}
+                                </td>
+                                <td class="px-6 py-4">
+                                    {{ reservation.getEndDate().format('Y-m-d') }}
+                                </td>
+                                <td class="px-6 py-4">
+                                    {{ reservation.getNumberOfPersons() }}
+                                </td>
+                                <td class="px-6 py-4">
+                                    $99
+                                </td>
+                                <td class="px-6 py-4">
+                                    <a href="{{ path('reservation_delete', {id: reservation.id}) }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                        </svg>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                        No reservation yet.
+                    </div>
+                {% endif %}
+
+
+
+
+        {% else %}
+            <div class="text-gray-500 dark:text-gray-400 mb-6">
+                Please  <a href="/login" class="font-medium text-blue-600 hover:underline dark:text-blue-500">Login</a>
+            </div>
+            <p class="text-sm font-light text-gray-500 dark:text-gray-400">
+                Don’t have an account yet? <a href="/register" class="font-medium text-blue-600 hover:underline dark:text-blue-500">Sign up</a>
+            </p>
+        {% endif %}
+            </div>
+        </div>
     </section>
 {% endblock %}

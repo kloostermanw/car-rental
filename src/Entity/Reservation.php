@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\ReservationRepository;
 use DateInterval;
+use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -105,17 +106,19 @@ class Reservation
      */
     public function validate(ExecutionContextInterface $context, $payload): void
     {
-        if ($this->getEndDate() <= $this->getStartDate()) {
+        $objStartDate = DateTimeImmutable::createFromMutable($this->getStartDate());
+
+        if ($this->getEndDate() <= $objStartDate) {
             $context->buildViolation('The start date must before the end date.')
                 ->atPath('startDate')
                 ->addViolation();
 
-        } elseif ($this->getEndDate() <= ($this->getStartDate())->add(new DateInterval('P2D'))) {
+        } elseif ($this->getEndDate() <= ($objStartDate)->add(new DateInterval('P2D'))) {
             $context->buildViolation('The rental period must be at least 3 days.')
                 ->atPath('endDate')
                 ->addViolation();
 
-        } elseif (($this->getStartDate())->add(new DateInterval('P14D')) < $this->getEndDate()) {
+        } elseif (($objStartDate)->add(new DateInterval('P14D')) < $this->getEndDate()) {
             $context->buildViolation('The rental period can not be longer then 14 days.')
                 ->atPath('endDate')
                 ->addViolation();

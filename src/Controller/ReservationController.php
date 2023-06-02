@@ -31,7 +31,6 @@ class ReservationController extends AbstractController
     {
         $reservation = new Reservation();
         $form = $this->createForm(ReservationFormType::class, $reservation);
-
         $form->handleRequest($request);
 
         if ($form->isSubmitted()) {
@@ -41,32 +40,40 @@ class ReservationController extends AbstractController
             if (!$this->canUserMakeReservation($user, $objReservation->getStartDate())) {
                 $form->addError(new FormError('You are limited to rente a car once every 30 days.'));
             }
-
-            if ($form->isValid()) {
-
                 if ($user instanceof User) {
                     $objReservation->setUser($user);
                 }
 
                 $objReservation = $this->createBooking($objReservation);
 
+                if (!$objReservation->getCar() instanceof Car) {
+                    $form->addError(new FormError('No car found for this period.'));
+                }
 
-//            return $this->redirectToRoute("events", [
-//                'bigcity'=> $form->get('bigcity')->getData()->getId(),
-//                'category'=> $form->get('category')->getData()->getId(),
-//                'events' => $events
-//            ]);
+            if ($form->isValid()) {
+                $this->em->persist($objReservation);
+                $this->em->flush();
 
-                return $this->render('reservation/show.html.twig', [
-                    "reservation_id" => $objReservation->getId(),
-                    "car" => ($objReservation->getCar() instanceof Car) ? $objReservation->getCar()->getId() : "no car found for this period.",
-                ]);
+                return $this->redirectToRoute('dashboard.index');
             }
         }
 
         return $this->render('reservation/index.html.twig', [
             'form' => $form->createView(),
         ]);
+    }
+
+    #[Route('/reservation/delete/{id}', name: 'reservation_delete')]
+    public function destroy(UserInterface $user, $id): Response
+    {
+        $objReservation = $this->em->getRepository(Reservation::class)->Find($id);
+
+        if ($objReservation instanceof Reservation) {
+            $this->em->remove($objReservation);
+            $this->em->flush();
+        }
+
+        return $this->redirectToRoute('dashboard.index');
     }
 
     protected function createBooking(Reservation $reservation): Reservation
@@ -101,8 +108,6 @@ class ReservationController extends AbstractController
 
             if ($objCar instanceof Car) {
                 $reservation->setCar($objCar);
-                $this->em->persist($reservation);
-                $this->em->flush();
             }
         }
 
