@@ -110,7 +110,7 @@ class Reservation
                 ->atPath('startDate')
                 ->addViolation();
 
-        } elseif ($this->getEndDate() <= ($this->getStartDate())->add(new DateInterval('P3D'))) {
+        } elseif ($this->getEndDate() <= ($this->getStartDate())->add(new DateInterval('P2D'))) {
             $context->buildViolation('The rental period must be at least 3 days.')
                 ->atPath('endDate')
                 ->addViolation();
