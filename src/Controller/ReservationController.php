@@ -9,58 +9,104 @@ use App\Form\ReservationFormType;
 use DateInterval;
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\NonUniqueResultException;
+use Doctrine\ORM\NoResultException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 class ReservationController extends AbstractController
 {
+    public function __construct(
+        protected EntityManagerInterface $em,
+        protected RequestStack $requestStack,
+    ) {}
 
-    private EntityManagerInterface $em;
-
-    public function __construct(EntityManagerInterface $em)
-    {
-        $this->em = $em;
-    }
-
+    /**
+     * @throws NonUniqueResultException
+     * @throws NoResultException
+     */
     #[Route('/reservation/create', name: 'reservation_create')]
     public function create(Request $request, UserInterface $user): Response
     {
-        $reservation = new Reservation();
-        $form = $this->createForm(ReservationFormType::class, $reservation);
-        $form->handleRequest($request);
+        $objSession = $this->requestStack->getSession();
+        $objReservation = new Reservation();
+        $objForm = $this->createForm(ReservationFormType::class, $objReservation);
+        $objForm->handleRequest($request);
 
-        if ($form->isSubmitted()) {
+        if ($objForm->isSubmitted()) {
             /** @var Reservation $objReservation */
-            $objReservation = $form->getData();
+            $objReservation = $objForm->getData();
 
             if (!$this->canUserMakeReservation($user, $objReservation->getStartDate())) {
-                $form->addError(new FormError('You are limited to rente a car once every 30 days.'));
+                $objForm->addError(new FormError('You are limited to rente a car once every 30 days.'));
             }
                 if ($user instanceof User) {
                     $objReservation->setUser($user);
                 }
 
-                $objReservation = $this->createBooking($objReservation);
+                $objReservation = $this->tryToFindCar($objReservation);
 
                 if (!$objReservation->getCar() instanceof Car) {
-                    $form->addError(new FormError('No car found for this period.'));
+                    $objForm->addError(new FormError('No car found for this period.'));
                 }
 
-            if ($form->isValid()) {
-                $this->em->persist($objReservation);
-                $this->em->flush();
+            if ($objForm->isValid()) {
+                $objSession->set('reservation', $objReservation);
+                $objSession->set('car_id', $objReservation->getCar()->getId());
 
-                return $this->redirectToRoute('dashboard.index');
+                return $this->redirectToRoute('reservation.show');
             }
         }
 
         return $this->render('reservation/index.html.twig', [
-            'form' => $form->createView(),
+            'form' => $objForm->createView(),
         ]);
+    }
+
+    #[Route('/reservation/show', name: 'reservation.show')]
+    public function show(Request $request, UserInterface $user): Response
+    {
+        $objSession = $this->requestStack->getSession();
+        $objReservation = $objSession->get('reservation');
+        $intCarId = $objSession->get('car_id');
+        
+        if ($objReservation instanceof Reservation && !is_null($intCarId)) {
+            $objCar = $this->em->getRepository(Car::class)->Find($intCarId);
+
+            return $this->render('reservation/show.html.twig', [
+                'reservation' => $objReservation,
+                'car' => $objCar,
+            ]);
+        }
+
+        return $this->redirectToRoute('dashboard.index');
+    }
+
+    #[Route('/reservation/store', name: 'reservation.store')]
+    public function store(Request $request, UserInterface $objUser): Response
+    {
+        $objSession = $this->requestStack->getSession();
+        $objReservation = $objSession->get('reservation');
+        $objCar = $this->em->getRepository(Car::class)->Find($objSession->get('car_id'));
+
+        if ($objReservation instanceof Reservation && $objCar instanceof Car && $objUser instanceof User) {
+            $objReservation->setUser($objUser);
+            $objReservation->setCar($objCar);
+
+            if ($request->get('accept') === 'yes') {
+                $this->em->persist($objReservation);
+                $this->em->flush();
+            }
+
+            $objSession->clear();
+        }
+
+        return $this->redirectToRoute('dashboard.index');
     }
 
     #[Route('/reservation/delete/{id}', name: 'reservation_delete')]
@@ -76,27 +122,30 @@ class ReservationController extends AbstractController
         return $this->redirectToRoute('dashboard.index');
     }
 
-    protected function createBooking(Reservation $reservation): Reservation
+    /**
+     * Create a book with the Car the fit the needs.
+     *
+     * @param Reservation $reservation
+     * @return Reservation
+     * @throws \Doctrine\ORM\NoResultException
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    protected function tryToFindCar(Reservation $reservation): Reservation
     {
         //*** Find car ids that are NOT available for this period.
-        $query = $this->em->createQuery(
-            'select DISTINCT IDENTITY(r.car) from App\Entity\Reservation r
-                where r.startDate < :end
-                and r.endDate > :start'
-            )
-            ->setParameters(['start' => $reservation->getStartDate(), 'end' => $reservation->getEndDate()]);
+        $arrIds = $this->getCarIdsThatHaveReservations($reservation);
 
-        $result = $query->getScalarResult();
-        $ids = array_column($result, "1");
-
+        //*** Find Car that fits
         $qb = $this->em->createQueryBuilder();
         $qb->select('car')
             ->from(Car::class, 'car')
             ->leftJoin('car.category', 'cat');
-        if (count($ids) > 0) {
+
+        if (count($arrIds) > 0) {
             $qb->where($qb->expr()->notIn('car.id', ':ids'))
-                ->setParameter('ids', $ids);
+                ->setParameter('ids', $arrIds);
         }
+
         $qb->andWhere('cat.numberOfPersons >= :persons')
             ->orderBy('cat.numberOfPersons')
             ->setParameter('persons', $reservation->getNumberOfPersons())
@@ -114,6 +163,15 @@ class ReservationController extends AbstractController
         return $reservation;
     }
 
+    /**
+     * Checks if given user can make a reservation, given the 30 days fair usage.
+     *
+     * @param UserInterface $user
+     * @param DateTimeInterface|null $objDateTime
+     * @return bool
+     * @throws \Doctrine\ORM\NoResultException
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
     protected function canUserMakeReservation(UserInterface $user, ?DateTimeInterface $objDateTime): bool
     {
         $blnReturn = true;
@@ -140,4 +198,23 @@ class ReservationController extends AbstractController
         return $blnReturn;
     }
 
+    /**
+     * Get Car Ids that have reservations for given period.
+     *
+     * @param Reservation $reservation
+     * @return array
+     */
+    protected function getCarIdsThatHaveReservations(Reservation $reservation): array
+    {
+        $query = $this->em->createQuery(
+            'select DISTINCT IDENTITY(r.car) from App\Entity\Reservation r
+                where r.startDate < :end
+                and r.endDate > :start'
+        )
+            ->setParameters(['start' => $reservation->getStartDate(), 'end' => $reservation->getEndDate()]);
+
+        $result = $query->getScalarResult();
+
+        return array_column($result, "1");
+    }
 }

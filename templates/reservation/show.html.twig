@@ -2,19 +2,72 @@
 
 {% block body %}
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+<section class="bg-white dark:bg-gray-900 p-6">
+    <div class="flex flex-col items-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+        <div class="relative overflow-x-auto">
+            <p class="text-gray-500 dark:text-gray-400 mb-6 mt-6">
+                The following car is available, please accept this car to complete the reservation.
+            </p>
 
+            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
 
-    <h2 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Reservation</h2>
-    <ul class="max-w-md space-y-1 text-gray-500 list-disc list-inside dark:text-gray-400">
-        <li>
-            Car id {{ car }}
-        </li>
-        <li>
-            {{ reservation_id }}
-        </li>
-        <li>
-        </li>
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                    <tr>
+                        <th scope="col" class="px-6 py-3">
+                            Product name
+                        </th>
+                        <th scope="col" class="px-6 py-3">
+                            Start Date
+                        </th>
+                        <th scope="col" class="px-6 py-3">
+                            End Date
+                        </th>
+                        <th scope="col" class="px-6 py-3">
+                            Number Of Persons
+                        </th>
+                        <th scope="col" class="px-6 py-3">
+                            Price
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="bg-white dark:bg-gray-800">
+                        <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                            {{ car.getBrand() }} ({{ car.getCategory().getNumberOfPersons }})
+                        </th>
+                        <td class="px-6 py-4">
+                            {{ reservation.getStartDate().format('Y-m-d') }}
+                        </td>
+                        <td class="px-6 py-4">
+                            {{ reservation.getEndDate().format('Y-m-d') }}
+                        </td>
+                        <td class="px-6 py-4">
+                            {{ reservation.getNumberOfPersons() }}
+                        </td>
+                        <td class="px-6 py-4">
+                            $99
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="flex justify-end mt-8">
+                <form method="post" action="/reservation/store">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+                    <input type="hidden" name="accept" value="no">
+                    <button type="submit" class="py-2.5 px-5 mr-2 mb-2 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                        Cancel
+                    </button>
+                </form>
+                <form method="post" action="/reservation/store">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+                    <input type="hidden" name="accept" value="yes">
+                    <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                        Accept
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
 
-</div>
 {% endblock %}
