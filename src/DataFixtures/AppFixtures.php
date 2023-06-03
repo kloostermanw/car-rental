@@ -13,7 +13,7 @@ class AppFixtures extends Fixture
     {
         //*** Add Categories.
         $category2 = new Category();
-        $category2->setName('2-person minivan');
+        $category2->setName('2-person jeep');
         $category2->setNumberOfPersons('2');
         $manager->persist($category2);
 
@@ -23,7 +23,7 @@ class AppFixtures extends Fixture
         $manager->persist($category5);
 
         $category7 = new Category();
-        $category7->setName('2-person jeep');
+        $category7->setName('7-person minivan');
         $category7->setNumberOfPersons('7');
         $manager->persist($category7);
 
@@ -37,18 +37,21 @@ class AppFixtures extends Fixture
         //*** Add Cars.
         $car = new Car();
         $car->setBrand('Jeep');
+        $car->setType('Wrangler');
         $car->setPrice(4999);
         $car->setCategory($this->getReference('category2'));
         $manager->persist($car);
 
         $car = new Car();
         $car->setBrand('Nissan');
+        $car->setType('Qashqai');
         $car->setPrice(5499);
         $car->setCategory($this->getReference('category5'));
         $manager->persist($car);
 
         $car = new Car();
         $car->setBrand('Kia');
+        $car->setType('Sorento');
         $car->setPrice(9154);
         $car->setCategory($this->getReference('category7'));
         $manager->persist($car);

@@ -29,6 +29,9 @@ class Car
     #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]
     private ?int $price = null;
 
+    #[ORM\Column(length: 255)]
+    private ?string $type = null;
+
     public function __construct()
     {
         $this->reservations = new ArrayCollection();
@@ -106,6 +109,18 @@ class Car
     public function setPrice(int $price): self
     {
         $this->price = $price;
+
+        return $this;
+    }
+
+    public function getType(): ?string
+    {
+        return $this->type;
+    }
+
+    public function setType(string $type): self
+    {
+        $this->type = $type;
 
         return $this;
     }

@@ -33,7 +33,7 @@
                 <tbody>
                     <tr class="bg-white dark:bg-gray-800">
                         <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                            {{ car.getBrand() }} ({{ car.getCategory().getNumberOfPersons }})
+                            {{ car.getBrand() }} {{ car.getType() }} ({{ car.getCategory().getName }})
                         </th>
                         <td class="px-6 py-4">
                             {{ reservation.getStartDate().format('Y-m-d') }}
