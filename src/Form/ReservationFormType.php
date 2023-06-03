@@ -3,6 +3,7 @@
 namespace App\Form;
 
 use App\Entity\Reservation;
+use DateInterval;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
@@ -46,11 +47,9 @@ class ReservationFormType extends AbstractType
                         'class' => ''
                     ],
                     'label' => false,
-                    'data' => new \DateTime('tomorrow'),
+                    'data' => (new \DateTime('today'))->add(new DateInterval('P3D')),
                 ]
             )
-//            ->add('user')
-//            ->add('car')
         ;
     }
 

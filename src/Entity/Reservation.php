@@ -36,6 +36,9 @@ class Reservation
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $endDate = null;
 
+    #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]
+    private ?int $price = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -101,6 +104,18 @@ class Reservation
         return $this;
     }
 
+    public function getPrice(): ?int
+    {
+        return $this->price;
+    }
+
+    public function setPrice(int $price): self
+    {
+        $this->price = $price;
+
+        return $this;
+    }
+
     /**
      * @Assert\Callback
      */
@@ -123,5 +138,20 @@ class Reservation
                 ->atPath('endDate')
                 ->addViolation();
         }
+    }
+
+    public function calculatePrice(): void
+    {
+        //*** Get number of Days.
+        $intDays = ($this->getStartDate())->diff($this->getEndDate())->format("%a");
+
+        if ($intDays > 0 && $this->getCar() instanceof Car) {
+            $this->setPrice($this->getCar()->getPrice() * $intDays);
+        }
+    }
+
+    public function getFormattedPrice(): string
+    {
+        return "$ " . ($this->getPrice() / 100);
     }
 }

@@ -74,7 +74,7 @@ class ReservationController extends AbstractController
         $objSession = $this->requestStack->getSession();
         $objReservation = $objSession->get('reservation');
         $intCarId = $objSession->get('car_id');
-        
+
         if ($objReservation instanceof Reservation && !is_null($intCarId)) {
             $objCar = $this->em->getRepository(Car::class)->Find($intCarId);
 
@@ -157,6 +157,7 @@ class ReservationController extends AbstractController
 
             if ($objCar instanceof Car) {
                 $reservation->setCar($objCar);
+                $reservation->calculatePrice();
             }
         }
 

@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\CarRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: CarRepository::class)]
@@ -24,6 +25,9 @@ class Car
 
     #[ORM\OneToMany(mappedBy: 'car', targetEntity: Reservation::class, orphanRemoval: true)]
     private Collection $reservations;
+
+    #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]
+    private ?int $price = null;
 
     public function __construct()
     {
@@ -85,6 +89,23 @@ class Car
                 $reservation->setCar(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getPrice(): ?int
+    {
+        return $this->price;
+    }
+
+    public function getFormattedPrice(): string
+    {
+        return "$ " . ($this->getPrice() / 100);
+    }
+
+    public function setPrice(int $price): self
+    {
+        $this->price = $price;
 
         return $this;
     }

@@ -49,7 +49,7 @@
                                     {{ reservation.getNumberOfPersons() }}
                                 </td>
                                 <td class="px-6 py-4">
-                                    $99
+                                    {{ reservation.getFormattedPrice() }}
                                 </td>
                                 <td class="px-6 py-4">
                                     <a href="{{ path('reservation_delete', {id: reservation.id}) }}">

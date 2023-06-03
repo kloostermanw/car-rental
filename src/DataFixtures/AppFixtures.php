@@ -37,16 +37,19 @@ class AppFixtures extends Fixture
         //*** Add Cars.
         $car = new Car();
         $car->setBrand('Jeep');
+        $car->setPrice(4999);
         $car->setCategory($this->getReference('category2'));
         $manager->persist($car);
 
         $car = new Car();
         $car->setBrand('Nissan');
+        $car->setPrice(5499);
         $car->setCategory($this->getReference('category5'));
         $manager->persist($car);
 
         $car = new Car();
         $car->setBrand('Kia');
+        $car->setPrice(9154);
         $car->setCategory($this->getReference('category7'));
         $manager->persist($car);
 
