@@ -25,7 +25,7 @@ Start shell inside docker
 docker-compose exec php /bin/bash
 ```
 
-Run the following command inside this shell.
+Run the following commands inside this shell.
 ```
 composer install
 php bin/console doctrine:migrations:migrate
